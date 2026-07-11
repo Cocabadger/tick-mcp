@@ -87,7 +87,10 @@ TOOLS = [
         "description": (
             "Get the REAL current date and time. Call this at the start of a reply "
             "and before using any relative time words (yesterday, tomorrow, tonight, "
-            "next week). Never guess time from context."
+            "next week). Never guess time from context. NEVER write a clock time in "
+            "your reply that did not come from this tool's output in THIS turn — a "
+            "timestamp without a fresh call is a hallucination, even if it plausibly "
+            "continues from an earlier one."
         ),
         "inputSchema": {
             "type": "object",

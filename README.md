@@ -13,6 +13,7 @@ working sessions with Claude, you've seen it.
 |---|---|---|---|
 | **local** | stdio | Claude Desktop, Claude Code, any local MCP client | [`local/server.py`](local/server.py) |
 | **remote** | Streamable HTTP | claude.ai (web / mobile) custom connectors, self-hosting | [`remote/server.py`](remote/server.py) |
+| **hook** | Claude Code hook | stamping every user message with its real send time | [`hooks/`](hooks/) |
 
 ## What it gives your assistant
 
@@ -93,6 +94,13 @@ to UTC (override with the `TICK_DEFAULT_TZ` env var), and the tool description
 tells the model to always pass your IANA timezone. If you want a clock that
 just knows your local time — run the local flavor.
 
+## Bonus for Claude Code: stamp your messages
+
+There's one thing no MCP server can see: **when you sent your messages** —
+the protocol doesn't pass message timestamps to the model. Claude Code can
+close even that gap with a three-line `UserPromptSubmit` hook that stamps
+every message with its real send time. See [`hooks/`](hooks/).
+
 ## The discipline rule (the other half of the fix)
 
 The server alone isn't enough — the model must be *required* to use it.
@@ -105,6 +113,17 @@ Add this to your Claude memory / user preferences / `CLAUDE.md`:
 > with `tick:since` instead of guessing.
 
 Server + rule = an assistant that stops gaslighting you about what day it is.
+
+## Limits (honest)
+
+The rule raises compliance; it cannot guarantee it. The model can still skip
+the call and hallucinate a plausible-looking timestamp — it will happily
+continue arithmetic from the last real call ("21:39" → "21:42" → "21:47",
+all invented). A fake stamp is worse than none: it looks like a measurement.
+Catch it once and it behaves for the rest of the session. The only hard
+enforcement today is system-level: in Claude Code, the [hook](hooks/) stamps
+messages outside the model's control; in Claude Desktop and claude.ai no
+such mechanism exists.
 
 ## Why not just use the reference time server?
 

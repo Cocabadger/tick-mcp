@@ -98,9 +98,12 @@ TOOLS = [
         "description": (
             "Get the REAL current date and time. Call this at the start of a reply "
             "and before using any relative time words (yesterday, tomorrow, tonight, "
-            "next week). Never guess time from context. ALWAYS pass the user's IANA "
-            "timezone — this server is remote, so without it you get UTC, not the "
-            "user's local time."
+            "next week). Never guess time from context. NEVER write a clock time in "
+            "your reply that did not come from this tool's output in THIS turn — a "
+            "timestamp without a fresh call is a hallucination, even if it plausibly "
+            "continues from an earlier one. ALWAYS pass the user's IANA timezone — "
+            "this server is remote, so without it you get UTC, not the user's local "
+            "time."
         ),
         "inputSchema": {
             "type": "object",
