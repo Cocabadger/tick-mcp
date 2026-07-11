@@ -63,7 +63,7 @@ def tool_since(args: dict) -> str:
     ts = args.get("timestamp", "")
     try:
         then = datetime.fromisoformat(ts)
-    except ValueError:
+    except (TypeError, ValueError):
         return json.dumps({"error": f"bad ISO timestamp: {ts!r}"})
     note = None
     if then.tzinfo is None:
@@ -170,6 +170,17 @@ def handle(req: dict) -> dict | None:
     return None
 
 
+def _safe_handle(msg: dict) -> dict | None:
+    try:
+        return handle(msg)
+    except Exception as e:
+        rid = msg.get("id")
+        if rid is None:
+            return None
+        return {"jsonrpc": "2.0", "id": rid,
+                "error": {"code": -32603, "message": f"internal error: {e}"}}
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
@@ -213,14 +224,14 @@ class Handler(BaseHTTPRequestHandler):
                  "error": {"code": -32700, "message": "parse error"}}).encode())
             return
         if isinstance(msg, list):  # JSON-RPC batch (protocol 2025-03-26)
-            resps = [r for r in (handle(m) for m in msg if isinstance(m, dict))
+            resps = [r for r in (_safe_handle(m) for m in msg if isinstance(m, dict))
                      if r is not None]
             if resps:
                 self._send(200, json.dumps(resps).encode())
             else:
                 self._send(202)
         elif isinstance(msg, dict):
-            resp = handle(msg)
+            resp = _safe_handle(msg)
             if resp is not None:
                 self._send(200, json.dumps(resp).encode())
             else:

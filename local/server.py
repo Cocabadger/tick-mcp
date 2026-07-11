@@ -57,7 +57,7 @@ def tool_since(args: dict) -> str:
     ts = args.get("timestamp", "")
     try:
         then = datetime.fromisoformat(ts)
-    except ValueError:
+    except (TypeError, ValueError):
         return json.dumps({"error": f"bad ISO timestamp: {ts!r}"})
     if then.tzinfo is None:
         then = then.astimezone()
@@ -128,6 +128,8 @@ def handle(req: dict) -> dict | None:
         }}
     if method == "notifications/initialized":
         return None
+    if method == "ping":
+        return {"jsonrpc": "2.0", "id": rid, "result": {}}
     if method == "tools/list":
         return {"jsonrpc": "2.0", "id": rid, "result": {"tools": TOOLS}}
     if method == "tools/call":
@@ -160,10 +162,21 @@ def main():
             req = json.loads(line)
         except json.JSONDecodeError:
             continue
-        resp = handle(req)
-        if resp is not None:
-            sys.stdout.write(json.dumps(resp) + "\n")
-            sys.stdout.flush()
+        # a malformed or unexpected message must never kill the server
+        for msg in (req if isinstance(req, list) else [req]):
+            if not isinstance(msg, dict):
+                continue
+            try:
+                resp = handle(msg)
+            except Exception as e:
+                rid = msg.get("id")
+                if rid is None:
+                    continue
+                resp = {"jsonrpc": "2.0", "id": rid,
+                        "error": {"code": -32603, "message": f"internal error: {e}"}}
+            if resp is not None:
+                sys.stdout.write(json.dumps(resp) + "\n")
+                sys.stdout.flush()
 
 
 if __name__ == "__main__":
