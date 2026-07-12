@@ -15,6 +15,8 @@ Endpoint: POST /mcp   (GET / is a health check)
 import base64
 import json
 import os
+import threading
+import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -24,7 +26,7 @@ except ImportError:
     ZoneInfo = None
 
 SERVER_NAME = "tick"
-SERVER_VERSION = "1.0.0"
+SERVER_VERSION = "1.1.0"
 SUPPORTED_PROTOCOLS = {"2024-11-05", "2025-03-26", "2025-06-18"}
 DEFAULT_TZ = os.environ.get("TICK_DEFAULT_TZ", "UTC")
 
@@ -33,6 +35,33 @@ DEFAULT_TZ = os.environ.get("TICK_DEFAULT_TZ", "UTC")
 MAX_BODY = 256 * 1024   # reject bodies over 256 KB (memory-exhaustion guard)
 MAX_BATCH = 50          # cap JSON-RPC batch amplification
 SOCKET_TIMEOUT = 15     # seconds; frees threads stuck on slow/idle sockets
+
+# Best-effort per-client rate limit on the POST path. Behind Railway's proxy the
+# real client is in X-Forwarded-For (spoofable, so this stops casual abuse and
+# runaway clients, not a determined attacker). Override via env for self-hosters.
+RATE_LIMIT = int(os.environ.get("TICK_RATE_LIMIT", "120"))   # requests per window per IP
+RATE_WINDOW = int(os.environ.get("TICK_RATE_WINDOW", "60"))  # seconds
+_RATE_MAX_IPS = 10000   # bound the tracking table so it can't grow without limit
+_rate_lock = threading.Lock()
+_rate_hits = {}  # ip -> list of monotonic timestamps within the current window
+
+
+def _rate_ok(ip: str) -> bool:
+    if RATE_LIMIT <= 0:
+        return True  # disabled
+    now = time.monotonic()
+    cutoff = now - RATE_WINDOW
+    with _rate_lock:
+        hits = [t for t in _rate_hits.get(ip, ()) if t > cutoff]
+        if len(hits) >= RATE_LIMIT:
+            _rate_hits[ip] = hits
+            return False
+        hits.append(now)
+        _rate_hits[ip] = hits
+        if len(_rate_hits) > _RATE_MAX_IPS:  # evict stale buckets
+            for k in [k for k, v in _rate_hits.items() if not v or v[-1] <= cutoff]:
+                _rate_hits.pop(k, None)
+    return True
 
 # 64x64 clock icon, so connector UIs show a clock instead of the host's logo
 FAVICON = base64.b64decode(
@@ -237,7 +266,18 @@ class Handler(BaseHTTPRequestHandler):
         # stateless server: session termination is a no-op
         self._send(200)
 
+    def _client_ip(self) -> str:
+        xff = self.headers.get("X-Forwarded-For")
+        if xff:
+            return xff.split(",")[0].strip()
+        return self.client_address[0] if self.client_address else "?"
+
     def do_POST(self):
+        if not _rate_ok(self._client_ip()):
+            self._send(429, json.dumps(
+                {"jsonrpc": "2.0", "id": None,
+                 "error": {"code": -32600, "message": "rate limit exceeded"}}).encode())
+            return
         try:
             length = int(self.headers.get("Content-Length") or 0)
         except ValueError:

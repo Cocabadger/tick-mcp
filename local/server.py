@@ -22,7 +22,7 @@ except ImportError:
     ZoneInfo = None
 
 SERVER_NAME = "tick"
-SERVER_VERSION = "1.0.0"
+SERVER_VERSION = "1.1.0"
 
 
 def _tz(name: str | None):
