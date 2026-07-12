@@ -1,0 +1,16 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.cocabadger/tick-mcp",
+  "description": "A time server that keeps your AI honest about time. Real clock + drift guard, zero dependencies.",
+  "repository": {
+    "url": "https://github.com/Cocabadger/tick-mcp",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://tick-mcp-production.up.railway.app/mcp"
+    }
+  ]
+}
