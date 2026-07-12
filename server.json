@@ -1,5 +1,5 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.cocabadger/tick-mcp",
   "description": "A time server that keeps your AI honest about time. Real clock + drift guard, zero dependencies.",
   "repository": {
