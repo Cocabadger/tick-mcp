@@ -72,7 +72,18 @@ It's a standard stdio MCP server. Point your client at
 ## Install: remote (for claude.ai web / mobile)
 
 claude.ai can't run local servers — it connects to remote MCP servers by URL.
-Deploy your own instance in a couple of minutes; `remote/` ships a Dockerfile
+
+**Use the public instance.** In claude.ai: **Settings → Connectors → Add
+custom connector**, paste:
+
+```
+https://tick-mcp-production.up.railway.app/mcp
+```
+
+It's a stateless clock — it sees tool calls (a timezone name, a timestamp),
+never your conversation.
+
+**Or deploy your own** in a couple of minutes; `remote/` ships a Dockerfile
 that runs anywhere (Railway, Render, Fly.io, a VPS):
 
 ```bash
