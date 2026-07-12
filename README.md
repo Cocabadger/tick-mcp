@@ -124,6 +124,10 @@ Claude Code can use it too:
 claude mcp add --transport http tick https://your-app.up.railway.app/mcp
 ```
 
+**Self-host env vars:** `TICK_DEFAULT_TZ` (default `UTC`), `TICK_RATE_LIMIT`
+(requests per window per IP on the POST path, default `120`, set `0` to
+disable), `TICK_RATE_WINDOW` (seconds, default `60`).
+
 **Timezone caveat:** a remote server doesn't know your local time. It defaults
 to UTC (override with the `TICK_DEFAULT_TZ` env var), and the tool description
 tells the model to always pass your IANA timezone. If you want a clock that
@@ -160,6 +164,17 @@ Catch it once and it behaves for the rest of the session. The only hard
 enforcement today is system-level: in Claude Code, the [hook](hooks/) stamps
 messages outside the model's control; in Claude Desktop and claude.ai no
 such mechanism exists.
+
+## Security
+
+The public endpoint is intentionally unauthenticated — it's a clock, it holds
+no secrets and no state (nothing to leak between callers). What it *does* guard
+is availability: bodies are capped at 256 KB, JSON-RPC batches at 50, sockets
+time out (no slowloris), and there's a best-effort per-IP rate limit. Tool
+descriptions and server metadata are static constants, so the server can't be
+used to inject instructions it didn't author. If you'd rather not trust a
+shared instance, self-host — it's one file and a Dockerfile (pinned base image,
+non-root, healthcheck). Found something? Open an issue.
 
 ## Why not just use the reference time server?
 
