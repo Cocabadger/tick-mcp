@@ -12,6 +12,7 @@ to always pass the user's IANA timezone.
 Endpoint: POST /mcp   (GET / is a health check)
 """
 
+import base64
 import json
 import os
 from datetime import datetime, timezone
@@ -26,6 +27,17 @@ SERVER_NAME = "tick"
 SERVER_VERSION = "1.0.0"
 SUPPORTED_PROTOCOLS = {"2024-11-05", "2025-03-26", "2025-06-18"}
 DEFAULT_TZ = os.environ.get("TICK_DEFAULT_TZ", "UTC")
+
+# 64x64 clock icon, so connector UIs show a clock instead of the host's logo
+FAVICON = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABYklEQVR42u2bwQ3CMAxFOwAzcGcG"
+    "FmH/I0sUgVQJVTRNyP+OHX9LUQ8UKe8lPtRxlkWhMIvr7b7WjHTAUwlBQYeTwQZ3K8Ia3JWI2kn+"
+    "G24lIKFr33UjAr3arf8ZKoG1zdHpEQa+R4CpBBZ8rwATCSxwdNAkRIAvSUix+pRdEA0eLiEiPCwV"
+    "IsNDJKQWEAn++bh8BlRCBAEb+PegCYgA3yKBvvoscSVwWBr0CmCkzxl4Cb5bAOqjZBR8cxqgtn+v"
+    "CBR4kwDUyvWUy2rAW+Gr02BEMXN7lwU+TECLCCb4cAFnIt5w+ycS3I2AX5NgrzpMAKMIWtoBFmk3"
+    "ZAccTZSx4i5T4KgavH+mEeCuNpBeQIRPYZSAsLUAcwEzSDCtB0xRHJ1dQIqS+PRVYZ0NMOElQIej"
+    "Oh5Xg4RaZNQkZdcmxyyBqVFSrbJqlla7vPsLE6Xfp7o1ortDuj2mO4Q5oHV1VhErXgJsxV2QJt0p"
+    "AAAAAElFTkSuQmCC")
 
 
 def _tz(name: str):
@@ -205,6 +217,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, json.dumps(
                 {"status": "ok", "server": SERVER_NAME,
                  "version": SERVER_VERSION, "mcp_endpoint": "/mcp"}).encode())
+        elif self.path.split("?")[0] in ("/favicon.ico", "/favicon.png", "/icon.png"):
+            self._send(200, FAVICON, ctype="image/png")
         else:
             # no server-initiated SSE streams — allowed by the Streamable HTTP spec
             self._send(405)
