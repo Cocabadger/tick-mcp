@@ -119,9 +119,10 @@ Add this to your Claude memory / user preferences / `CLAUDE.md`:
 
 > Before every reply that mentions time in any form (dates, "yesterday",
 > "tomorrow", "tonight", "this week", greetings like "good morning"),
-> call the `tick:now` tool first. Never infer the current time from
+> first call the `now` tool of the tick time server (under whatever name
+> your client registered it). Never infer the current time from
 > conversation context. When referring to a past event's recency, verify
-> with `tick:since` instead of guessing.
+> with the `since` tool instead of guessing.
 
 Server + rule = an assistant that stops gaslighting you about what day it is.
 
