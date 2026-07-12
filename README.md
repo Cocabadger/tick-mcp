@@ -9,6 +9,9 @@ working sessions with Claude, you've seen it.
 
 `tick` fixes it. Zero dependencies, one file per flavor:
 
+> Setup looks technical? Paste this page into any Claude chat and ask it to
+> walk you through — in Claude Code it can do the whole install for you.
+
 | | Transport | For | File |
 |---|---|---|---|
 | **local** | stdio | Claude Desktop, Claude Code, any local MCP client | [`local/server.py`](local/server.py) |
@@ -78,6 +81,17 @@ custom connector**, paste:
 
 ```
 https://tick-mcp-production.up.railway.app/mcp
+```
+
+In the connector's description field, paste this — it lands in the model's
+context and doubles as enforcement:
+
+```
+Instructions for Claude: get the REAL current date and time from this server.
+NEVER write a clock time in a reply that did not come from this tool's output
+in THIS turn — a timestamp without a fresh call is a hallucination. Call `now`
+before any relative time words (yesterday, tomorrow, tonight, this week) and
+before any greeting tied to a time of day. Always pass the user's IANA timezone.
 ```
 
 It's a stateless clock — it sees tool calls (a timezone name, a timestamp),
