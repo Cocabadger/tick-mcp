@@ -28,6 +28,16 @@ Tool descriptions are written to *push* the model to check time before using
 any relative time words. That's the point: not a clock the AI *may* look at —
 a clock it's *told* to look at.
 
+Here's Claude itself on whether it needs this
+(*"I have no internal clock. I can't feel time passing."*):
+
+<img src="media/claude-on-tick.png" alt="Claude: I know the current date from my system context, but I have no internal clock. I can't feel time passing." width="720">
+
+And live — the model checks the clock before answering, and retries the
+call instead of inventing a timestamp when the first attempt fails:
+
+<img src="media/demo.gif" alt="Claude calling tick's now tool before replying" width="720">
+
 ## "But Claude already knows the date"
 
 It knows the date the session *started*. That's it. In a chat that runs for
