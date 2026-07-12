@@ -159,6 +159,24 @@ recency checks, a remote flavor for claude.ai web, and tool descriptions
 engineered to *enforce* checking — plus the memory rule that makes it stick.
 It's a behavior fix, not just an API.
 
+## Prior art
+
+People have been chipping at this problem from different sides — credit where
+due:
+
+- [`mcp-server-time`](https://github.com/modelcontextprotocol/servers/tree/main/src/time) —
+  Anthropic's reference server: current time + timezone conversion.
+- [`mcp-simple-timeserver`](https://github.com/andybrandt/mcp-simple-timeserver)
+  by Andy Brandt — the closest earlier take, with a `calculate_time_distance`
+  tool and even NTP time.
+- [Ted Murray's hook write-up](https://dev.to/tadmstr/claude-code-doesnt-know-youve-been-gone-heres-the-fix-17ko) —
+  independently arrived at the same `UserPromptSubmit` timestamp-injection
+  pattern that lives in [`hooks/`](hooks/).
+
+`tick`'s contribution is putting the pieces into one kit and aiming them at
+*enforcement* — descriptions, rule, and hook working together so the model
+stops guessing.
+
 ## License
 
 MIT. Do whatever.

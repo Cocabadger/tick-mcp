@@ -42,3 +42,7 @@ Use it together with the tick server: the hook stamps *your* messages,
 
 Claude Desktop and claude.ai have no hooks — there the discipline rule in
 [`../RULE.md`](../RULE.md) is as far as enforcement goes.
+
+Credit: [Ted Murray arrived at this pattern independently](https://dev.to/tadmstr/claude-code-doesnt-know-youve-been-gone-heres-the-fix-17ko)
+before this repo existed — his write-up is a good read on the "you've been
+gone" problem.
