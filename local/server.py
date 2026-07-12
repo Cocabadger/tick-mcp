@@ -163,7 +163,7 @@ def main():
             continue
         try:
             req = json.loads(line)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, RecursionError):
             continue
         # a malformed or unexpected message must never kill the server
         for msg in (req if isinstance(req, list) else [req]):

@@ -28,6 +28,12 @@ SERVER_VERSION = "1.0.0"
 SUPPORTED_PROTOCOLS = {"2024-11-05", "2025-03-26", "2025-06-18"}
 DEFAULT_TZ = os.environ.get("TICK_DEFAULT_TZ", "UTC")
 
+# This endpoint is public and unauthenticated; a clock call is tiny, so cap
+# everything an anonymous caller can make the process allocate or do.
+MAX_BODY = 256 * 1024   # reject bodies over 256 KB (memory-exhaustion guard)
+MAX_BATCH = 50          # cap JSON-RPC batch amplification
+SOCKET_TIMEOUT = 15     # seconds; frees threads stuck on slow/idle sockets
+
 # 64x64 clock icon, so connector UIs show a clock instead of the host's logo
 FAVICON = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABYklEQVR42u2bwQ3CMAxFOwAzcGcG"
@@ -198,6 +204,7 @@ def _safe_handle(msg: dict) -> dict | None:
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
+    timeout = SOCKET_TIMEOUT  # socket read timeout: a slow/idle client can't pin a thread forever
 
     def _send(self, code: int, body: bytes = b"",
               ctype: str = "application/json"):
@@ -233,14 +240,32 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = -1
+        # a negative/oversized/absent-but-present length is the memory-DoS vector:
+        # read(-1) drains to EOF, a huge length buffers unbounded. Reject before reading.
+        if length < 0 or length > MAX_BODY:
+            self._send(413, json.dumps(
+                {"jsonrpc": "2.0", "id": None,
+                 "error": {"code": -32600,
+                           "message": f"request body must be 0..{MAX_BODY} bytes"}}).encode())
+            return
+        try:
             raw = self.rfile.read(length)
-            msg = json.loads(raw)
-        except (ValueError, json.JSONDecodeError):
+            # RecursionError guards against deeply-nested JSON crashing the handler
+            msg = json.loads(raw) if raw else None
+        except (ValueError, json.JSONDecodeError, RecursionError):
             self._send(400, json.dumps(
                 {"jsonrpc": "2.0", "id": None,
                  "error": {"code": -32700, "message": "parse error"}}).encode())
             return
         if isinstance(msg, list):  # JSON-RPC batch (protocol 2025-03-26)
+            if len(msg) > MAX_BATCH:
+                self._send(413, json.dumps(
+                    {"jsonrpc": "2.0", "id": None,
+                     "error": {"code": -32600,
+                               "message": f"batch too large (max {MAX_BATCH})"}}).encode())
+                return
             resps = [r for r in (_safe_handle(m) for m in msg if isinstance(m, dict))
                      if r is not None]
             if resps:
@@ -259,7 +284,9 @@ class Handler(BaseHTTPRequestHandler):
                  "error": {"code": -32600, "message": "invalid request"}}).encode())
 
     def log_message(self, fmt, *args):
-        print(f"{self.address_string()} {fmt % args}", flush=True)
+        # escape control chars so a crafted request path can't inject ANSI/newlines into logs
+        line = (fmt % args).encode("unicode_escape").decode("ascii")
+        print(f"{self.address_string()} {line}", flush=True)
 
 
 def main():
