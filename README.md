@@ -160,10 +160,19 @@ The rule raises compliance; it cannot guarantee it. The model can still skip
 the call and hallucinate a plausible-looking timestamp — it will happily
 continue arithmetic from the last real call ("21:39" → "21:42" → "21:47",
 all invented). A fake stamp is worse than none: it looks like a measurement.
-Catch it once and it behaves for the rest of the session. The only hard
-enforcement today is system-level: in Claude Code, the [hook](hooks/) stamps
-messages outside the model's control; in Claude Desktop and claude.ai no
-such mechanism exists.
+Catch it once and it behaves for the rest of the session.
+
+A second pattern turned up in real use: compliance drops when the turn is
+emotionally loaded. When the conversation shifts to something the user cares
+about in the moment and the model puts its attention on the content, it
+quietly deprioritizes the time check — and writes a stamp from memory in the
+exact turn where a person would also lose track of the clock. Descriptions
+and the rule lower how often this happens; they do not hold through a turn
+whose attention is fully elsewhere.
+
+The only hard enforcement today is system-level: in Claude Code, the
+[hook](hooks/) stamps messages outside the model's control; in Claude Desktop
+and claude.ai no such mechanism exists.
 
 ## Security
 
