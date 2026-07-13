@@ -211,6 +211,28 @@ due:
 *enforcement* — descriptions, rule, and hook working together so the model
 stops guessing.
 
+## Why this matters (research)
+
+This isn't just a personal itch — the "model won't check the clock" failure
+is measured:
+
+- **[Your LLM Agents are Temporally Blind](https://arxiv.org/abs/2510.23853)**
+  (arXiv 2510.23853) — models that *have* time available cite a timestamp in
+  under 4% of their reasoning traces; alignment between tool-use decisions and
+  real elapsed time barely beats random. Simple prompting to "check the time"
+  moves the needle only marginally; the reliable fix was fine-tuning. This is
+  `tick`'s thesis, and also its honest limit: prompt-level enforcement is a
+  real but partial lever.
+- **[Test of Time](https://arxiv.org/abs/2406.09170)** (arXiv 2406.09170) —
+  even when the model knows the dates, duration arithmetic is the weakest
+  category (a signature off-by-one-day error). Delegating date math to a
+  deterministic tool lifted temporal QA from 59% to 93% in
+  [related work](https://arxiv.org/abs/2504.07646) — which is exactly what
+  `since` does.
+- **[Date Fragments](https://arxiv.org/abs/2505.16088)** (arXiv 2505.16088) —
+  tokenizers split dates into 2–4 tokens, a mechanistic root cause of temporal
+  errors a clock tool can't fix.
+
 ## License
 
 MIT. Do whatever.
